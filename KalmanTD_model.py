@@ -5,7 +5,7 @@
 # -------------------------------------------------------------------------
 
 import numpy as np
-import numpy.matlib
+import matplotlib.pyplot as plt
 
 
 def create_stimuli(onset, duration, trial_length):
@@ -112,39 +112,39 @@ class serial_overshadowing_simulation():
         Creates the stimulus presented together (or alone) with second-order stimulus extinction.
         """
         # A -> X -> +
-        stimuli_1 = np.zeros((self.trial_length, self.nb_stimuli),dtype = np.int)
+        stimuli_1 = np.zeros((self.trial_length, self.num_stimuli),dtype = np.int)
         stimuli_1[:,0] = create_stimuli(self.onset1, self.duration, self.trial_length)
         stimuli_1[:,1] = create_stimuli(self.onset2, self.duration, self.trial_length)
 
         # B -> Y -> +
-        stimuli_2 = np.zeros((self.trial_length, self.nb_stimuli), dtype = np.int)
+        stimuli_2 = np.zeros((self.trial_length, self.num_stimuli), dtype = np.int)
         stimuli_2[:,2] = create_stimuli(self.onset1, self.duration, self.trial_length)
         stimuli_2[:,3] = create_stimuli(self.onset2, self.duration, self.trial_length)
 
         # A -> -
-        stimuli_3 = np.zeros((self.trial_length, self.nb_stimuli),dtype = np.int)
+        stimuli_3 = np.zeros((self.trial_length, self.num_stimuli),dtype = np.int)
         stimuli_3[:,0] = create_stimuli(self.onset1, self.duration, self.trial_length)
 
         return stimuli_1, stimuli_2, stimuli_3
 
-    def initialise_covariance_matrix(self, stimuli_1, stimuli_2, stimuli_3):
+    def initialise_stim_matrix(self, stimuli_1, stimuli_2, stimuli_3):
         """
-        Creates the covariance matrix for each stimulus presented together (or alone) with second-order stimulus extinction.
+        Creates the stimulus matrix for each stimulus presented together (or alone) with second-order stimulus extinction.
         """
         # A -> X -> +
-        matrix_stimuli_1 = construct_stim_matrix(stimuli_1, self.trial_length, self.nb_stimuli)
+        matrix_stimuli_1 = construct_stim_matrix(stimuli_1, self.trial_length, self.num_stimuli)
 
         # B -> Y -> +
-        matrix_stimuli_2 = construct_stim_matrix(stimuli_2, self.trial_length, self.nb_stimuli)
+        matrix_stimuli_2 = construct_stim_matrix(stimuli_2, self.trial_length, self.num_stimuli)
 
         # A -> -
-        matrix_stimuli_3 = construct_stim_matrix(stimuli_3, self.trial_length, self.nb_stimuli)
+        matrix_stimuli_3 = construct_stim_matrix(stimuli_3, self.trial_length, self.num_stimuli)
 
         # All the stimuli
-        covariance_matrix = np.concatenate((np.matlib.repmat( (matrix_stimuli_1), self.nb_trials, 1), np.matlib.repmat( (matrix_stimuli_2), self.nb_trials, 1)))
-        covariance_matrix = np.concatenate((covariance_matrix, np.matlib.repmat( (matrix_stimuli_3), self.nb_trials, 1)))
+        stim_matrix = np.concatenate((np.matlib.repmat( (matrix_stimuli_1), self.num_trials, 1), np.matlib.repmat( (matrix_stimuli_2), self.num_trials, 1)))
+        stim_matrix = np.concatenate((stim_matrix, np.matlib.repmat( (matrix_stimuli_3), self.num_trials, 1)))
 
-        return covariance_matrix
+        return stim_matrix
 
     def initialise_reward_matrix(self, stimuli_1, stimuli_2, stimuli_3):
         """
@@ -160,29 +160,29 @@ class serial_overshadowing_simulation():
         reward_stimuli_3 = np.zeros((self.trial_length), dtype = np.int)
 
         # All the stimuli
-        reward_matrix = np.asmatrix( np.append( np.matlib.repmat( (reward_stimuli_1, reward_stimuli_2), self.nb_trials, 1), np.matlib.repmat(reward_stimuli_3, self.nb_trials, 1)))
+        reward_matrix = np.asmatrix( np.append( np.matlib.repmat( (reward_stimuli_1, reward_stimuli_2), self.num_trials, 1), np.matlib.repmat(reward_stimuli_3, self.num_trials, 1)))
 
         return reward_matrix
 
-    def Kalman_TD(self, covariance_matrix, reward_matrix):
+    def Kalman_TD(self, stim_matrix, reward_matrix):
         """
         Creates the Kalman-TD weight matrix for second-order stimulus extinction simulation.
         """
-        weights_matrix_kalmanTD = Kalman_TD(covariance_matrix, reward_matrix, self.nb_stimuli, self.trial_length, 0, self.covariance, self.diffusion_variance, self.discount_factor, self.noise_variance, self.learning_rate)
+        weights_matrix_kalmanTD = Kalman_TD(stim_matrix, reward_matrix, self.num_stimuli, self.trial_length, 0, self.covariance, self.diffusion_variance, self.discount_factor, self.noise_variance, self.learning_rate)
 
         weights_kalmanTD = weights_matrix_kalmanTD[self.onset2::self.trial_length, (self.trial_length + self.onset2)]
-        weights_kalmanTD = np.concatenate((weights_kalmanTD, weights_matrix_kalmanTD[self.onset2::self.trial_length, ((self.nb_stimuli-1)*self.trial_length + self.onset2)]), axis=1)
+        weights_kalmanTD = np.concatenate((weights_kalmanTD, weights_matrix_kalmanTD[self.onset2::self.trial_length, ((self.num_stimuli-1)*self.trial_length + self.onset2)]), axis=1)
 
         return weights_kalmanTD
 
-    def standard_TD(self, covariance_matrix, reward_matrix):
+    def standard_TD(self, stim_matrix, reward_matrix):
         """
         Creates the standard-TD weight matrix for second-order stimulus extinction simulation.
         """
 
-        weights_matrix_TD = Kalman_TD(covariance_matrix, reward_matrix, self.nb_stimuli, self.trial_length, 1, self.covariance, self.diffusion_variance, self.discount_factor, self.noise_variance, self.learning_rate)
+        weights_matrix_TD = Kalman_TD(stim_matrix, reward_matrix, self.num_stimuli, self.trial_length, 1, self.covariance, self.diffusion_variance, self.discount_factor, self.noise_variance, self.learning_rate)
 
         weights_TD = weights_matrix_TD[self.onset2::self.trial_length, (self.trial_length + self.onset2)]
-        weights_TD = np.concatenate((weights_TD, weights_matrix_TD[self.onset2::self.trial_length, ((self.nb_stimuli-1)*self.trial_length + self.onset2)]), axis=1)
+        weights_TD = np.concatenate((weights_TD, weights_matrix_TD[self.onset2::self.trial_length, ((self.num_stimuli-1)*self.trial_length + self.onset2)]), axis=1)
 
         return weights_TD
