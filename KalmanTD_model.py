@@ -36,6 +36,18 @@ def construct_stim_matrix(stimuli, num_trials):
 
 
 def Kalman_TD(stim_matrix, reward_matrix, num_stimuli, trial_length, TD, covariance, diffusion_variance, discount_factor, noise_variance, learning_rate):
+    '''
+    stim_matrix - matrix of stimulus. each row corresponds to a time step
+    reward matrix - vector of rewards for each time step
+    TD - true or false, indicates if we are using standard TD or kalman TD
+    covaraince - initiali covariance of the weights - scalar that is turned into diagonal matrix
+    diffusion_variance - aka q, aka process variance, aka tau
+    discount_factor - aka gamma, used when weighting long term rewards
+    noise_variance - aka measurement noise
+    learning_rate - aka alpha
+    '''
+    
+    
     matrix_num_rows = np.size(stim_matrix,0)  # total number of time steps
     
     # create current weights and weights matrix

@@ -8,8 +8,8 @@ def kalman_filter(X, r, c=1.0, s=1.0, q=0.0):
     X  : (N, D) array of stimulus/feature vectors, one row per trial
     r  : (N,) array of rewards
     c  : prior variance of the weights (prior covariance = c * I)
-    s  : reward noise variance (scalar or length-N array)
-    q  : transition (diffusion) variance (scalar or length-N array)
+    s  : reward noise variance (scalar or length-N array) - measurement noise
+    q  : transition (diffusion) variance (scalar or length-N array) - process noise
     N trials, D stimuli
     """
     X = np.asarray(X, dtype=float)
